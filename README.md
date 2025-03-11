@@ -4,12 +4,23 @@ Explore an innovative, efficient, and cost-effective approach to deploying a cus
 
 ⭐ **Don't forget to star the project if it helped you!**
 
-# 📋 Prerequisites
+## 📋 Prerequisites
 
-- [docker](https://www.docker.com/)  version 24 or higher.
-- [docker-compose](https://www.docker.com/) version 1.18 or higher.
+Ensure your system meets the following requirements:
 
-# 🚥 Authentication for Self-Hosted Runners
+- **Docker:** Version 20 or higher [(Install Docker)](https://www.docker.com/)
+
+- **Host OS:** Linux
+
+- **Virtualization Enabled:**
+  - Check with:
+    - `grep -E -o 'vmx|svm' /proc/cpuinfo`
+  - Output indicates:
+    - `vmx` → Intel VT-x is supported & enabled.
+    - `svm` → AMD-V is supported & enabled.
+  - If virtualization is not enabled, enable it in the BIOS/UEFI settings.
+
+## 🚥 Authentication for Self-Hosted Runners
 For the purpose of authenticating your custom self-hosted runners, we offer two viable authentication methods:
 
 1. Personal Access Token (`PAT`) - The Personal Access Token is a static, manually created token that provides secure access to GitHub. This offers a long-lived method of authentication (The PAT token needs Read and Write access to organization self-hosted runners).
@@ -18,7 +29,7 @@ For the purpose of authenticating your custom self-hosted runners, we offer two 
 
 > **Note:** Only one of these authentication methods is necessary. Choose the method that best fits your
 
-# 🚀 Deployment Guide
+## 🚀 Deployment Guide
 
 1. Create/Update the environmental file `.env`
   - `PAT`: Personal access token from GitHub
@@ -58,24 +69,64 @@ version: "3.9"
 services:
   windows-github-runner-vm:
     image: docker.io/vaggeliskls/windows-github-custom-runner:latest
+    platform: linux/amd64
     env_file: .env
     stdin_open: true
     tty: true
     privileged: true
+    cgroup: host
+    restart: always
     ports:
       - 3389:3389
+      - 2222:2222
 ```
-3. Run: `docker-compose up -d`
+3. Create `docker-compose.override.yml` when you want your VM to be persistent
+```yaml
+services:
+  windows-github-runner-vm:
+    volumes:
+      - libvirt_data:/var/lib/libvirt
+      - vagrant_data:/root/.vagrant.d
+      - vagrant_project:/app/.vagrant
+      - libvirt_config:/etc/libvirt
 
-# 🌐 Access via Remote Desktop
-For debugging purposes or testing you can always connect to the VM with remote desktop softwares.
+volumes:
+  libvirt_data:
+    name: libvirt_data
+  vagrant_data:
+    name: vagrant_data
+  vagrant_project:
+    name: vagrant_project
+  libvirt_config:
+    name: libvirt_config
+```
 
-Some software that used when developed was 
-1. Linux: rdesktop `rdesktop <ip>:3389` or [remina](https://remmina.org/)
-2. MacOS: [Windows remote desktop](https://apps.apple.com/us/app/microsoft-remote-desktop/id1295203466?mt=12)
-3. Windows: buildin `Remote Windows Connection` 
+4. Run: `docker-compose up -d`
 
-# 🔑 User Login
+> When you want to destroy everything `docker compose down -v`
+
+## 🌐 Access
+
+### Remote Desktop (RDP)  
+For debugging or testing, you can connect to the VM using **Remote Desktop** on port `3389`.  
+
+#### Software for Remote Desktop Access  
+| OS       | Software |
+|----------|----------------|
+| **Linux**   | [`rdesktop`](https://github.com/rdesktop/rdesktop) → `rdesktop <ip>:3389` or [`Remmina`](https://remmina.org/) |
+| **MacOS**   | [Microsoft Remote Desktop](https://apps.apple.com/us/app/microsoft-remote-desktop/id1295203466?mt=12) |
+| **Windows** | Built-in **Remote Desktop Connection** |
+
+---
+
+### SSH   
+You can connect via SSH using either the **administrator** or **Vagrant** user credentials.  
+```bash
+ssh <user>@<host> -p 2222
+```
+
+
+## 🔑 User Login
 The default users based on vagrant image are 
 
 1. Administrator
@@ -87,7 +138,7 @@ The default users based on vagrant image are
 
 
 
-# 📚 Further Reading and Resources
+## 📚 Further Reading and Resources
 
 - [Windows in docker container](https://github.com/vaggeliskls/windows-in-docker-container)
 - [Windows Vagrant Tutorial](https://github.com/SecurityWeekly/vulhub-lab)
