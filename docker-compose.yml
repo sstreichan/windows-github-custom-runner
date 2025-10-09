@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  windows-github-runner-vm:
-    image: docker.io/vaggeliskls/windows-github-custom-runner:latest
+  windows-runner-vm:
+    image: docker.io/vaggeliskls/windows-ci-custom-runner:latest
     build:
       dockerfile: ./Dockerfile
       context: .
